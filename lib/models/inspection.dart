@@ -62,8 +62,8 @@ class Inspection extends Item {
   }
 
   // Costanti per le chiavi dei dettagli dal progetto Android
-  static const String keyCurrentStateId = 'CurrentStateId';
-  static const String KEY_X_ID_MAN_SCHEDA_A_STATO = "X_ID_MAN_SCHEDA_A_STATO";
+  static const String keyCurrentStateId = 'CurrentStateId'; // Usato per recuperare l'ID dello stato dai details
+  static const String KEY_X_ID_MAN_SCHEDA_A_STATO = "CurrentStateId";
   static const String keyInspectionTour = 'TOUR_ISPETTIVO';
   static const String keyPlant = 'IMPIANTO';
   static const String keySubPlant = 'SOTTO_IMPIANTO';

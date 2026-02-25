@@ -181,3 +181,48 @@ class ShiftLeader {
   @override
   String toString() => name;
 }
+
+/*
+ * Rappresenta una coppia chiave-valore per i parametri delle azioni BPM
+ */
+class KeyValuePair {
+  final String key;
+  final String value;
+
+  KeyValuePair(this.key, this.value);
+
+  Map<String, String> toJson() => {
+    'Key': key,
+    'Value': value,
+  };
+}
+
+/*
+ * Rappresenta una riga di dati per l'upload degli esiti (api/ispezione/mobile/{id}/attivita)
+ */
+class TableRow {
+  final int id;
+  final List<TableCell> values;
+
+  TableRow({required this.id, required this.values});
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'values': values.map((v) => v.toJson()).toList(),
+  };
+}
+
+/*
+ * Rappresenta una cella di dati all'interno di una TableRow
+ */
+class TableCell {
+  final String name;
+  final String value;
+
+  TableCell(this.name, this.value);
+
+  Map<String, String> toJson() => {
+    'name': name,
+    'value': value,
+  };
+}

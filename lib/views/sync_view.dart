@@ -33,19 +33,23 @@ class _SyncViewState extends State<SyncView> {
     final syncVM = context.read<SyncViewModel>();
     
     if (syncVM.syncSuccess) {
+      if (syncVM.syncErrors.isNotEmpty) {
+        _showErrorDialog(syncVM.syncErrors);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Sincronizzazione completata con successo!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (context) => const InterventionsListView()),
+        );
+      }
       syncVM.resetSyncSuccess();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Sincronizzazione completata con successo!'),
-          backgroundColor: Colors.green,
-        ),
-      );
-      Navigator.of(context).push(
-        MaterialPageRoute(builder: (context) => const InterventionsListView()),
-      );
     }
     
-    if (syncVM.errorMessage != null) {
+    if (syncVM.errorMessage != null && syncVM.syncErrors.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(syncVM.errorMessage!),
@@ -59,6 +63,46 @@ class _SyncViewState extends State<SyncView> {
       );
       syncVM.clearError();
     }
+  }
+
+  void _showErrorDialog(List<String> errors) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Dettagli Sincronizzazione'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Alcuni dati non sono stati sincronizzati correttamente:'),
+              const SizedBox(height: 12),
+              Flexible(
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: errors.length,
+                  itemBuilder: (context, index) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4.0),
+                    child: Text('• ${errors[index]}', style: const TextStyle(fontSize: 13, color: Colors.red)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (context) => const InterventionsListView()),
+              );
+            },
+            child: const Text('PROSEGUI COMUNQUE'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override

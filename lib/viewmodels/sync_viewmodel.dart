@@ -21,6 +21,8 @@ class SyncViewModel extends ChangeNotifier {
   String _userName = '';
   String _displayName = '';
   AppUser? _currentUser;
+  List<String> _syncErrors = [];
+  List<String> get syncErrors => _syncErrors;
 
   // Filtra gli impianti in base ai tag di autorizzazione dell'utente
   List<Plant> get plants => _plants.where((p) => _currentUser?.hasAccess(p.authTags) ?? false).toList();
@@ -102,7 +104,9 @@ class SyncViewModel extends ChangeNotifier {
     notifyListeners();
     
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('USER_ID', value?.id ?? '');
+    await prefs.setString('X_ID_MAN_MANUTENTORE', value?.id ?? '');
+    // Salviamo anche in USER_ID_SELECTED per riferimento, ma il principale è X_ID_MAN_MANUTENTORE
+    await prefs.setString('USER_ID_SELECTED', value?.id ?? '');
   }
 
   /*
@@ -116,9 +120,6 @@ class SyncViewModel extends ChangeNotifier {
     await prefs.setString('ResponsabileId', value?.id ?? '');
   }
 
-  /*
-   * Esegue la procedura di sincronizzazione
-   */
   Future<void> synchronize() async {
     if (_selectedPlant == null || _selectedSubPlant == null) {
       _errorMessage = 'Selezionare un impianto e un sotto-impianto prima di sincronizzare.';
@@ -129,11 +130,15 @@ class SyncViewModel extends ChangeNotifier {
     _isLoading = true;
     _syncSuccess = false;
     _errorMessage = null;
+    _syncErrors = [];
     notifyListeners();
 
     try {
-      await _syncService.fullSync();
+      _syncErrors = await _syncService.fullSync();
       _syncSuccess = true;
+      if (_syncErrors.isNotEmpty) {
+        _errorMessage = 'Sincronizzazione completata con alcuni errori.';
+      }
     } catch (e) {
       _errorMessage = 'Sincronizzazione fallita: $e';
       _syncSuccess = false;
@@ -157,6 +162,10 @@ class SyncViewModel extends ChangeNotifier {
       if (_currentUser != null) {
         _userName = _currentUser!.username;
         _displayName = _currentUser!.firstName.isNotEmpty ? _currentUser!.firstName : _userName;
+        
+        // Android Configuration.getUserId uses "USER_ID"
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('USER_ID', _currentUser!.id);
       }
 
       // Recupera Impianti
@@ -180,7 +189,7 @@ class SyncViewModel extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       final lastPlantId = prefs.getString('IMPIANTO');
       final lastSubPlantId = prefs.getString('SOTTO_IMPIANTO');
-      final lastUserId = prefs.getString('USER_ID');
+      final lastUserId = prefs.getString('X_ID_MAN_MANUTENTORE');
       final lastRespId = prefs.getString('ResponsabileId');
 
       _selectedPlant = plants.where((i) => i.id == lastPlantId).firstOrNull ??
