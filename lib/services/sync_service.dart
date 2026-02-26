@@ -25,31 +25,28 @@ class SyncService {
       // 0. Upload in parallelo invece che sequenziale
       await uploadLocalData(syncErrors);
 
-      // 1. & 2. Parallelizziamo tutto il possibile all'inizio
-      print('SYNC: Recupero versioni e anagrafiche...');
-      final results = await Future.wait([
-        syncItemsClass('ANAG'),
-        syncItemsClass('INFO'),
-        getVersions(),
+      // 1. & 2. Recupero versioni e metadati base iniziali
+      print('SYNC: Recupero versioni...');
+      final versionsResult = await getVersions();
+      
+      // 3. Recupero anagrafiche e stati in parallelo con controllo versioni
+      print('SYNC: Recupero anagrafiche e stati...');
+      await Future.wait([
+        syncItemsClass('ANAG', versionsResult),
+        syncItemsClass('INFO', versionsResult),
+        syncItemsByCategory('ANAG', versionsResult),
+        syncWfeStates(versionsResult),
         getCurrentUser(),
       ]);
 
-      Map<String, int> serverVersions = results[2] as Map<String, int>;
+      await changeIdsAnag(versionsResult);
 
-      // 3. Recupero stati e categorie in parallelo
-      print('SYNC: Recupero stati e categorie...');
-      await Future.wait([
-        syncItemsByCategory('ANAG', serverVersions), 
-        syncWfeStates()
-      ]);
-
-      await changeIdsAnag();
-
-      // 4. Download Ispezioni
+      // 4. Download Ispezioni (Smart Sync)
       print('SYNC: Download ispezioni...');
-      Map<String, String> wfeStates = await syncWfeStates();
+      // Recuperiamo gli ID degli stati WFE caricati o in cache
+      final wfeStates = await _getLocalWfeStates(); 
       if (wfeStates.isNotEmpty) {
-        await syncInspectionsOnly(wfeStates);
+        await syncInspectionsOnly(wfeStates, versionsResult);
       }
       
       stopwatch.stop();
@@ -145,7 +142,7 @@ class SyncService {
         ];
 
         final response = await _dio.put(
-          'api/wfe/$ispezioneId/action/name/ESEGUI',
+          'api/wfe/$ispezioneId/action/name/ISPEZ_PEREsegui',
           data: parameters,
           options: Options(contentType: 'application/json'),
         );
@@ -161,6 +158,30 @@ class SyncService {
       }
     } catch (e) {
       print('Errore _sendIspezioniCompletate: $e');
+    }
+  }
+
+  Future<void> releaseInspection(String ispezioneId) async {
+    try {
+      final List<Map<String, dynamic>> parameters = [
+        {'Key': 'REQ_NOTE', 'Value': 'Rilasciato intervento da app mobile'},
+      ];
+
+      print('DEBUG RELEASE: URL -> ${_dio.options.baseUrl}api/wfe/$ispezioneId/action/name/ISPEZ_PERNonIncarico');
+      print('DEBUG RELEASE: PAYLOAD -> ${jsonEncode(parameters)}');
+
+      final response = await _dio.put(
+        'api/wfe/$ispezioneId/action/name/ISPEZ_PERNonIncarico',
+        data: parameters,
+        options: Options(contentType: 'application/json'),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Errore rilascio tour $ispezioneId: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Errore releaseInspection: $e');
+      rethrow;
     }
   }
 
@@ -259,7 +280,7 @@ class SyncService {
 
   // --- DOWNLOAD OTTIMIZZATO ---
 
-  Future<void> syncInspectionsOnly(Map<String, String> wfeStates) async {
+  Future<void> syncInspectionsOnly(Map<String, String> wfeStates, Map<String, int> serverVersions) async {
     final prefs = await SharedPreferences.getInstance();
     final plant = prefs.getString('IMPIANTO');
 
@@ -268,6 +289,16 @@ class SyncService {
     final toDate = DateTime(now.year, now.month, now.day + 1, 23, 59, 59);
 
     try {
+      // Ottimizzazione: Controllo versione ispezioni
+      final localVersion = await _dbHelper.getLastVersion(Version.infoIspezioni);
+      final serverVersion = serverVersions[Version.infoIspezioni] ?? 
+                           serverVersions['ISPEZ_PER'] ?? 0;
+      
+      if (localVersion != 0 && localVersion >= serverVersion && serverVersion != 0) {
+        print('SYNC: Ispezioni già aggiornate (v$localVersion). Skip.');
+        return;
+      }
+
       final response = await _dio.get(
         'api/ispezione/mobile/list',
         queryParameters: {
@@ -283,6 +314,7 @@ class SyncService {
       );
 
       if (response.statusCode == 200) {
+        // Se arriviamo qui, i dati sono cambiati. Cancelliamo e inseriamo batch.
         await _dbHelper.deleteItems('ispezioni');
         final List<dynamic> data = response.data;
 
@@ -295,6 +327,9 @@ class SyncService {
         }
         await _dbHelper.insertBatch('ispezioni', inspectionsToInsert);
         await _syncAllActivities(ids);
+        
+        // Aggiorniamo versione locale
+        await _dbHelper.updateVersion(Version(info: Version.infoIspezioni, version: serverVersion));
       }
     } catch (e) {
       print('Errore lista ispezioni: $e');
@@ -302,16 +337,14 @@ class SyncService {
   }
 
   Future<void> _syncAllActivities(List<String> ids) async {
-    // Aumentiamo il batch a 5 e rimuoviamo il delay inutile
-    const batchSize = 5;
+    // Aumentiamo il batch a 20 per massimizzare il parallelismo su rete veloce
+    const batchSize = 20;
     for (var i = 0; i < ids.length; i += batchSize) {
       final chunk = ids.sublist(
         i,
         i + batchSize > ids.length ? ids.length : i + batchSize,
       );
-      // Esegue il batch di 5 ispezioni contemporaneamente
       await Future.wait(chunk.map((id) => syncInspectionActivities(id)));
-      // Rimosso Future.delayed(const Duration(milliseconds: 100));
     }
   }
 
@@ -341,21 +374,33 @@ class SyncService {
 
   // --- METODI ACCESSORI ---
 
-  Future<void> syncItemsClass(String typeCode) async {
+  Future<void> syncItemsClass(String typeCode, Map<String, int> serverVersions) async {
     try {
+      final localVersion = await _dbHelper.getLastVersion('CLASS_$typeCode');
+      final serverVersion = serverVersions[typeCode] ?? 0;
+
+      if (localVersion != 0 && localVersion >= serverVersion && serverVersion != 0) {
+        return;
+      }
+
       final response = await _dio.get(
         'api/items/class',
         queryParameters: {'typeCode': typeCode, 'fullFeature': false},
       );
       if (response.statusCode == 200) {
+        final List<Map<String, dynamic>> itemsToInsert = [];
         for (var json in response.data) {
-          await _dbHelper.insertOrUpdateItem('itemclass', {
+          itemsToInsert.add({
             'idext': json['Id'].toString(),
             'code': json['Code'],
             'description': json['Description'],
             'typecode': typeCode,
-          }, json['Id'].toString());
+          });
         }
+        if (itemsToInsert.isNotEmpty) {
+          await _dbHelper.insertBatch('itemclass', itemsToInsert);
+        }
+        await _dbHelper.updateVersion(Version(info: 'CLASS_$typeCode', version: serverVersion));
       }
     } catch (e) {}
   }
@@ -377,6 +422,15 @@ class SyncService {
     Map<String, int> serverVersions,
   ) async {
     try {
+      // Ottimizzazione: Controllo versione locale
+      final localVersion = await _dbHelper.getLastVersion(typeCode);
+      final serverVersion = serverVersions[typeCode] ?? 0;
+      
+      if (localVersion != 0 && localVersion >= serverVersion) {
+        print('SYNC: $typeCode è già aggiornato (v$localVersion). Skip.');
+        return;
+      }
+
       final response = await _dio.get(
         'api/item/mobile/class/${typeCode.toLowerCase()}',
         queryParameters: {'pag': 1, 'num': 1000, 'allDetails': true},
@@ -387,19 +441,28 @@ class SyncService {
           final item = Item.fromJson(json);
           itemsToInsert.add(item.toMap());
         }
-        // Unica scrittura massiva invece di 1000 scritture singole
         if (itemsToInsert.isNotEmpty) {
           await _dbHelper.insertBatch('item', itemsToInsert);
         }
+        // Salviamo la nuova versione
+        await _dbHelper.updateVersion(Version(info: typeCode, version: serverVersion));
       }
     } catch (e) {
       print('Errore syncItemsByCategory: $e');
     }
   }
 
-  Future<Map<String, String>> syncWfeStates() async {
+  Future<Map<String, String>> syncWfeStates(Map<String, int> serverVersions) async {
     Map<String, String> states = {};
     try {
+      // Usiamo ANAG come riferimento per la versione di WFE_State
+      final localVersion = await _dbHelper.getLastVersion('WFE_State');
+      final serverVersion = serverVersions['ANAG'] ?? 0;
+
+      if (localVersion != 0 && localVersion >= serverVersion && serverVersion != 0) {
+        return await _getLocalWfeStates();
+      }
+
       final response = await _dio.get('api/items/anag/WFE_State');
       if (response.statusCode == 200) {
         final List<Map<String, dynamic>> itemsToInsert = [];
@@ -416,13 +479,34 @@ class SyncService {
         if (itemsToInsert.isNotEmpty) {
           await _dbHelper.insertBatch('item', itemsToInsert);
         }
+        await _dbHelper.updateVersion(Version(info: 'WFE_State', version: serverVersion));
       }
     } catch (e) {}
     return states;
   }
 
-  Future<void> changeIdsAnag() async {
+  Future<Map<String, String>> _getLocalWfeStates() async {
+    final Map<String, String> states = {};
+    final localData = await _dbHelper.queryItems(
+      'item',
+      where: 'classdescr = ?',
+      whereArgs: ['WFE_State'],
+    );
+    for (var row in localData) {
+      states[row['code']] = row['idext'];
+    }
+    return states;
+  }
+
+  Future<void> changeIdsAnag(Map<String, int> serverVersions) async {
     try {
+      final localVersion = await _dbHelper.getLastVersion('STATI_ASSET_ISP');
+      final serverVersion = serverVersions['ANAG'] ?? 0;
+
+      if (localVersion != 0 && localVersion >= serverVersion && serverVersion != 0) {
+        return;
+      }
+
       final response = await _dio.get('api/items/anag/STATI_ASSET_ISP');
       if (response.statusCode == 200) {
         final localData = await _dbHelper.queryItems(
@@ -447,6 +531,7 @@ class SyncService {
         if (itemsToUpdate.isNotEmpty) {
           await _dbHelper.insertBatch('item', itemsToUpdate);
         }
+        await _dbHelper.updateVersion(Version(info: 'STATI_ASSET_ISP', version: serverVersion));
       }
     } catch (e) {}
   }

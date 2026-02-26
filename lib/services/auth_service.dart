@@ -12,6 +12,9 @@ class AuthService {
    * Esegue il login recuperando il token di accesso
    */
   Future<bool> login(String username, String password) async {
+    print('AUTH: Tentativo di login online per: $username');
+    print('AUTH: URL -> ${_dio.options.baseUrl}token');
+    
     try {
       final response = await _dio.post(
         'token',
@@ -30,6 +33,8 @@ class AuthService {
         ),
       );
 
+      print('AUTH: Risposta ricevuta status -> ${response.statusCode}');
+
       if (response.statusCode == 200) {
         final data = response.data;
         final accessToken = data['access_token'];
@@ -38,12 +43,21 @@ class AuthService {
           final prefs = await SharedPreferences.getInstance();
           await prefs.setString('access_token', accessToken);
           await prefs.setString('username', username);
+          print('AUTH: Login completato con successo.');
           return true;
         }
       }
+      print('AUTH: Login fallito (Status code != 200). Dati -> ${response.data}');
       return false;
     } on DioException catch (e) {
-      print('Errore di login: ${e.response?.statusCode} - ${e.response?.data}');
+      print('AUTH ERROR: DioException!');
+      print('AUTH ERROR: Status -> ${e.response?.statusCode}');
+      print('AUTH ERROR: Data -> ${e.response?.data}');
+      print('AUTH ERROR: Message -> ${e.message}');
+      print('AUTH ERROR: Type -> ${e.type}');
+      return false;
+    } catch (e) {
+      print('AUTH ERROR GENERALE: $e');
       return false;
     }
   }

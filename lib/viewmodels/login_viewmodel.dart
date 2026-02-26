@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';
@@ -64,19 +65,23 @@ class LoginViewModel extends ChangeNotifier {
       _errorMessage = "Credenziali non valide";
       return false;
     } catch (e) {
-      // Tentativo di login offline in caso di errore di connessione
-      final prefs = await SharedPreferences.getInstance();
-      final lastUser = prefs.getString('last_username');
-      final lastPass = prefs.getString('last_password');
-      
-      if (username == lastUser && password == lastPass) {
-        _lastUsername = username;
-        _errorMessage = "Modalità Offline: Accesso consentito";
-        notifyListeners();
-        return true;
+      if (kIsWeb) {
+        _errorMessage = "Errore di connessione o CORS. Se sei su Chrome, prova ad avviarlo senza sicurezza.";
+      } else {
+        // Tentativo di login offline in caso di errore di connessione
+        final prefs = await SharedPreferences.getInstance();
+        final lastUser = prefs.getString('last_username');
+        final lastPass = prefs.getString('last_password');
+        
+        if (username == lastUser && password == lastPass) {
+          _lastUsername = username;
+          _errorMessage = "Modalità Offline: Accesso consentito";
+          notifyListeners();
+          return true;
+        }
+        
+        _errorMessage = "Impossibile connettersi al server e credenziali offline non trovate";
       }
-      
-      _errorMessage = "Impossibile connettersi al server e credenziali offline non trovate";
       return false;
     } finally {
       _isLoading = false;

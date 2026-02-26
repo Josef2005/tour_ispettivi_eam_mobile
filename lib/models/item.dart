@@ -39,7 +39,7 @@ class Item {
   final String? description;
   final String? classId;
   final String? classDescr;
-  final List<ItemProperty> details;
+  List<ItemProperty> details;
   final int sync;
 
   Item({
@@ -114,6 +114,25 @@ class Item {
       return prop.valueLabel ?? prop.value ?? '';
     } catch (_) {
       return '';
+    }
+  }
+
+  void setDetailValue(String name, String value) {
+    try {
+      final prop = details.firstWhere((e) => e.name.toUpperCase() == name.toUpperCase());
+      // Creiamo una nuova lista se quella attuale è const
+      final newList = List<ItemProperty>.from(details);
+      newList.remove(prop);
+      newList.add(ItemProperty(
+          name: prop.name,
+          value: value,
+          label: prop.label,
+          valueLabel: prop.valueLabel));
+      details = newList;
+    } catch (_) {
+      final newList = List<ItemProperty>.from(details);
+      newList.add(ItemProperty(name: name, value: value));
+      details = newList;
     }
   }
 }

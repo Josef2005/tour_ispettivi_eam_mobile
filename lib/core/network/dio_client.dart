@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart'; // Necessario per IOHttpClientAdapter
 import 'package:shared_preferences/shared_preferences.dart';
@@ -16,9 +17,9 @@ class DioClient {
     _dio = Dio(
       BaseOptions(
         baseUrl: AppConfig.baseUrl, // Utilizza l'URL definito in AppConfig
-        connectTimeout: const Duration(seconds: 10),
-        receiveTimeout: const Duration(seconds: 10),
-        sendTimeout: const Duration(seconds: 10),
+        connectTimeout: const Duration(seconds: 5),
+        receiveTimeout: const Duration(seconds: 5),
+        sendTimeout: const Duration(seconds: 5),
         headers: {
           'stab': AppConfig.stabHeader, // '2'
           'clientName': AppConfig.clientNameHeader, // 'Mobile'
@@ -30,18 +31,26 @@ class DioClient {
 
     // --- SOLUZIONE ERRORE SSL (CERTIFICATE_VERIFY_FAILED) ---
     // Questo blocco permette di comunicare con server che hanno certificati self-signed
-    _dio.httpClientAdapter = IOHttpClientAdapter(
-      createHttpClient: () {
-        final client = HttpClient();
-        client.badCertificateCallback =
-            (X509Certificate cert, String host, int port) => true;
-        return client;
-      },
-    );
+    // NOTA: kIsWeb viene usato per evitare di usare IOHttpClientAdapter su web
+    if (!kIsWeb) {
+      _dio.httpClientAdapter = IOHttpClientAdapter(
+        createHttpClient: () {
+          final client = HttpClient();
+          client.badCertificateCallback =
+              (X509Certificate cert, String host, int port) => true;
+          return client;
+        },
+      );
+    }
 
     // --- INTERCEPTORS PER TOKEN ---
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
+        // Non aggiungiamo il token se stiamo già cercando di ottenerne uno (login)
+        if (options.path == 'token') {
+          return handler.next(options);
+        }
+
         final prefs = await SharedPreferences.getInstance();
         final token = prefs.getString('access_token');
 
@@ -53,7 +62,16 @@ class DioClient {
       },
       onError: (DioException e, handler) {
         // Log dettagliato degli errori per il debug nel terminale
-        print('DIO ERROR[${e.response?.statusCode}]: ${e.message}');
+        String errorMessage = e.message ?? 'Unknown error';
+        
+        if (kIsWeb && e.response == null) {
+          errorMessage = 'ERRORE CORS: Il browser ha bloccato la richiesta. '
+              'Assicurati che il server autorizzi le richieste da localhost '
+              'o avvia Chrome senza sicurezza (vedi istruzioni).';
+        }
+
+        print('DIO ERROR[${e.response?.statusCode}]: $errorMessage');
+        
         if (e.response?.statusCode == 401) {
           // Qui potresti gestire il logout automatico
         }

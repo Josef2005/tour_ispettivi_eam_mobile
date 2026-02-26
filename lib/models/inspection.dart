@@ -3,10 +3,10 @@ import 'inspection_activity.dart';
 import 'item.dart';
 
 class Inspection extends Item {
-  final int completed;
-  final int? loggedUser;
-  final String? dataInizioInt; // Mappato su Data_Inizio_Intervento nel DB
-  final String? dataFineInt;   // Mappato su Data_Fine_Intervento nel DB
+  int completed;
+  int? loggedUser;
+  String? dataInizioInt; // Mappato su Data_Inizio_Intervento nel DB
+  String? dataFineInt;   // Mappato su Data_Fine_Intervento nel DB
 
   Inspection({
     super.id,
@@ -20,6 +20,15 @@ class Inspection extends Item {
     this.dataInizioInt,
     this.dataFineInt,
   });
+
+  // Getters/Setters per compatibilità con ViewModel
+  String? getDataInizioIntervento() => dataInizioInt;
+  String? getDataFineIntervento() => dataFineInt;
+  
+  void setloggedUser(int? value) => loggedUser = value;
+  void setCompleted(int value) => completed = value;
+  void setDataInizioIntervento(String? value) => dataInizioInt = value;
+  void setDataFineIntervento(String? value) => dataFineInt = value;
 
   factory Inspection.fromJson(Map<String, dynamic> json) {
     final item = Item.fromJson(json);

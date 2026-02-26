@@ -1,6 +1,7 @@
-import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 import '../../models/version.dart';
 
 class DatabaseHelper {
@@ -20,6 +21,21 @@ class DatabaseHelper {
   }
 
   Future<Database> _initDatabase() async {
+    if (kIsWeb) {
+      print('DB: Inizializzazione database per il Web...');
+      var factory = databaseFactoryFfiWeb;
+      return await factory.openDatabase(
+        'tour_ispettivi_db',
+        options: OpenDatabaseOptions(
+          version: 5,
+          onCreate: (db, version) => _onCreate(db, version),
+          onUpgrade: (db, oldVersion, newVersion) {
+            print('DB: Upgrade database Web da versione $oldVersion a $newVersion');
+          },
+        ),
+      );
+    }
+
     String path = join(await getDatabasesPath(), 'tour_ispettivi.db');
     print('DB: Inizializzazione database al percorso: $path');
     return await openDatabase(

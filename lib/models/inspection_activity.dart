@@ -122,6 +122,25 @@ class InspectionActivity {
   }
 
   /*
+   * Restituisce se l'attività è in anomalia
+   */
+  bool get isAnomaly => getStringDetailValue('Anomalia') == '1';
+
+  /*
+   * Restituisce la nota dell'attività
+   */
+  String get note => getStringDetailValue('Nota');
+
+  /*
+   * Verifica se l'attività è in anomalia e se la nota è obbligatoria
+   */
+  void checkAnomalia() {
+    if (isAnomaly && note.trim().isEmpty) {
+      throw Exception('Nota obbligatoria per attività in anomalia: $description');
+    }
+  }
+
+  /*
    * Verifica se la risposta è formalmente corretta (evita caratteri segnaposto)
    */
   static bool checkAnswer(String? answer) {

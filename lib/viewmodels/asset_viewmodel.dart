@@ -122,30 +122,81 @@ class AssetViewModel extends ChangeNotifier {
 
   // Esempio per pulsante "NON IN CARICO"
   Future<void> releaseInspection() async {
-    // Logica per rilasciare l'ispezione (es. cambiare stato workflow a 'Non in carico' o simile)
-    // Parity con Android: sposta la richiesta BPM
-    print('Rilascio ispezione ${inspection.idext}');
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      // 1. Chiamata al server via SyncService
+      await _syncService.releaseInspection(inspection.idext);
+
+      // 2. Aggiornamento DB locale (Parity Android)
+      // Stato passa a 'ISPEZ_PER_ASS', logUser a 0, date a null
+      await _dbHelper.insertOrUpdateItem('ispezioni', {
+        ...inspection.toMap(),
+        'CurrentStateId': 'ISPEZ_PER_ASS', // Assunto come codice per assegnato
+        'loggedUser': 0,
+        'completed': 0,
+        'sync': 1,
+        'Data_Inizio_Intervento': null,
+        'Data_Fine_Intervento': null,
+      }, inspection.idext);
+
+      // 3. Aggiornamento oggetto in memoria (opzionale se si chiude la pagina)
+      inspection.setDetailValue('CurrentStateId', 'ISPEZ_PER_ASS');
+      inspection.setloggedUser(0);
+      inspection.setCompleted(0);
+      inspection.setDataInizioIntervento(null);
+
+    } catch (e) {
+      print('AssetViewModel: Errore durante il rilascio: $e');
+      // Personalizziamo l'errore per il rilascio (richiesta utente per parity/UX)
+      _errorMessage = "L'ispezione ${inspection.idext} si trova attualmente nello stato \"Assegnata\"";
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   // Esempio per "CONCLUDI ISPEZIONE"
   Future<void> completeInspection() async {
-    if (totalCompletionPercentage < 100) {
-      _errorMessage = "Completare tutte le attività prima di chiudere.";
-      notifyListeners();
-      return;
-    }
-
-    // Segna come completata localmente
-    await _dbHelper.insertOrUpdateItem('ispezioni', {
-      ...inspection.toMap(),
-      'completed': 1,
-      'sync': 0,
-      'Data_Fine_Intervento': DateTime.now().toIso8601String(),
-    }, inspection.idext);
-
-    // Tenta sync immediato degli esiti se possibile (opzionale)
-    // await _syncService.uploadLocalData([]);
-
+    _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
+
+    try {
+      // 1. Verifica completamento 100%
+      if (totalCompletionPercentage < 100) {
+        throw Exception("Completare tutte le attività prima di chiudere.");
+      }
+
+      // 2. Verifica anomalie senza nota (Parity Android)
+      for (var act in _activities) {
+        act.checkAnomalia();
+      }
+
+      // 3. Segna come completata localmente
+      final now = DateTime.now().toUtc().toIso8601String().replaceFirst('Z', '.000Z');
+      await _dbHelper.insertOrUpdateItem('ispezioni', {
+        ...inspection.toMap(),
+        'completed': 1,
+        'sync': 0,
+        'Data_Fine_Intervento': now,
+        // Assicuriamoci che Data_Inizio_Intervento sia impostata se non lo fosse
+        if (inspection.getDataInizioIntervento() == null)
+          'Data_Inizio_Intervento': now,
+      }, inspection.idext);
+
+      // 4. Update in memory
+      inspection.setCompleted(1);
+      inspection.setDataFineIntervento(now);
+
+    } catch (e) {
+      print('AssetViewModel: Errore durante la chiusura: $e');
+      _errorMessage = e is Exception ? e.toString().replaceFirst('Exception: ', '') : '$e';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 }
