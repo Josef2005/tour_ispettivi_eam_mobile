@@ -31,7 +31,7 @@ class _SyncViewState extends State<SyncView> {
   void _syncListener() {
     if (!mounted) return;
     final syncVM = context.read<SyncViewModel>();
-    
+
     if (syncVM.syncSuccess) {
       if (syncVM.syncErrors.isNotEmpty) {
         _showErrorDialog(syncVM.syncErrors);
@@ -42,13 +42,13 @@ class _SyncViewState extends State<SyncView> {
             backgroundColor: Colors.green,
           ),
         );
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (context) => const InterventionsListView()),
-        );
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (context) => const InterventionsListView()));
       }
       syncVM.resetSyncSuccess();
     }
-    
+
     if (syncVM.errorMessage != null && syncVM.syncErrors.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -83,7 +83,10 @@ class _SyncViewState extends State<SyncView> {
                   itemCount: errors.length,
                   itemBuilder: (context, index) => Padding(
                     padding: const EdgeInsets.symmetric(vertical: 4.0),
-                    child: Text('• ${errors[index]}', style: const TextStyle(fontSize: 13, color: Colors.red)),
+                    child: Text(
+                      '• ${errors[index]}',
+                      style: const TextStyle(fontSize: 13, color: Colors.red),
+                    ),
                   ),
                 ),
               ),
@@ -185,13 +188,10 @@ class _SyncViewState extends State<SyncView> {
                     const Text(
                       'Prima di cominciare sincronizza il tuo dispositivo',
                       textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.black54,
-                      ),
+                      style: TextStyle(fontSize: 16, color: Colors.black54),
                     ),
                     const SizedBox(height: 40),
-                    
+
                     // Selection Form
                     _buildDropdownRow<Plant>(
                       label: 'Impianto:',
@@ -224,20 +224,24 @@ class _SyncViewState extends State<SyncView> {
                       onChanged: viewModel.setShiftLeader,
                       hint: '-',
                     ),
-                    
+
                     const SizedBox(height: 60),
-                    
+
                     // Buttons
                     _buildMainButton(
                       text: 'SINCRONIZZA',
-                      onPressed: viewModel.isLoading ? null : () => viewModel.synchronize(),
+                      onPressed: viewModel.isLoading
+                          ? null
+                          : () => viewModel.synchronize(),
                       isLoading: viewModel.isLoading,
                       color: const Color(0xFF4A72B2),
                     ),
                     const SizedBox(height: 20),
                     _buildMainButton(
                       text: 'RICARICA DATI',
-                      onPressed: viewModel.isLoading ? null : () => viewModel.refreshData(),
+                      onPressed: viewModel.isLoading
+                          ? null
+                          : () => viewModel.refreshData(),
                       isLoading: false,
                       color: const Color(0xFF4A72B2),
                     ),
@@ -296,12 +300,26 @@ class _SyncViewState extends State<SyncView> {
                 value: value,
                 isExpanded: true,
                 icon: const Icon(Icons.arrow_drop_down, color: Colors.black87),
-                hint: hint != null ? Text(hint, style: TextStyle(color: Colors.grey.shade700, fontSize: 14)) : null,
+                hint: hint != null
+                    ? Text(
+                        hint,
+                        style: TextStyle(color: Colors.grey.shade700, fontSize: 14),
+                      )
+                    : null,
                 items: items.map((T item) {
+                  String text = item.toString();
+
+                  // Se l'oggetto è un utente, rimuoviamo la prima parentesi con il numero
+                  if (item is AppUser) {
+                    // Questa regex cerca la prima occorrenza di (numeri) seguita da uno spazio
+                    // e la sostituisce con una stringa vuota
+                    text = text.replaceFirst(RegExp(r'\(\d+\)\s*'), '');
+                  }
+
                   return DropdownMenuItem<T>(
                     value: item,
                     child: Text(
-                      item.toString(),
+                      text, // Ora visualizzerà "(U) Corvaia Davide"
                       style: const TextStyle(fontSize: 14, color: Colors.black87),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -334,8 +352,8 @@ class _SyncViewState extends State<SyncView> {
           elevation: color == Colors.white ? 0 : 2,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8.0),
-            side: color == Colors.white || color == Colors.grey.shade100 
-                ? BorderSide(color: Colors.grey.shade300) 
+            side: color == Colors.white || color == Colors.grey.shade100
+                ? BorderSide(color: Colors.grey.shade300)
                 : BorderSide.none,
           ),
         ),
@@ -343,10 +361,7 @@ class _SyncViewState extends State<SyncView> {
             ? SizedBox(
                 height: 24,
                 width: 24,
-                child: CircularProgressIndicator(
-                  color: textColor,
-                  strokeWidth: 2,
-                ),
+                child: CircularProgressIndicator(color: textColor, strokeWidth: 2),
               )
             : Text(
                 text,

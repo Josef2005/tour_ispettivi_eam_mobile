@@ -98,6 +98,30 @@ class InspectionActivity {
   }
 
   /*
+   * Converte l'attività nel formato TableRow richiesto dal server (Parity Android)
+   */
+  Map<String, dynamic> toServerTableRow() {
+    final List<Map<String, dynamic>> values = [
+      {'ColumnName': 'ATTIVITA', 'Value': getStringDetailValue('ATTIVITA')},
+      {'ColumnName': 'Risposta', 'Value': getStringDetailValue('Risposta')},
+      {'ColumnName': 'NonInMarcia', 'Value': getStringDetailValue('NonInMarcia')},
+      {'ColumnName': 'Nota', 'Value': getStringDetailValue('Nota')},
+      {'ColumnName': 'Anomalia', 'Value': getStringDetailValue('Anomalia')},
+      {'ColumnName': 'TipoAttivita', 'Value': getStringDetailValue('TipoAttivita')},
+      {'ColumnName': 'AssetId', 'Value': getStringDetailValue('AssetId')},
+      {'ColumnName': 'TagName', 'Value': getStringDetailValue('TagName')},
+      {'ColumnName': 'Timestamp', 'Value': getStringDetailValue('Timestamp')},
+      {'ColumnName': 'StatoAsset', 'Value': getStringDetailValue('StatoAsset')},
+      {'ColumnName': 'NumeroNotification', 'Value': getStringDetailValue('NumeroNotification')},
+    ];
+
+    return {
+      'Id': int.tryParse(idext) ?? 0,
+      'Values': values,
+    };
+  }
+
+  /*
    * Verifica se la risposta è formalmente corretta (evita caratteri segnaposto)
    */
   static bool checkAnswer(String? answer) {

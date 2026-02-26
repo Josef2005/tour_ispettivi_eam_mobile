@@ -4,6 +4,7 @@ import '../viewmodels/interventions_viewmodel.dart';
 import '../viewmodels/sync_viewmodel.dart';
 import '../models/inspection.dart';
 import 'login_view.dart';
+import 'asset_list_view.dart';
 
 class InterventionsListView extends StatefulWidget {
   const InterventionsListView({super.key});
@@ -92,7 +93,7 @@ class _InterventionsListViewState extends State<InterventionsListView> {
                 ],
               ),
             ),
-            
+
             // Barra di ricerca/filtro
             Container(
               width: double.infinity,
@@ -119,7 +120,7 @@ class _InterventionsListViewState extends State<InterventionsListView> {
                     ),
                   ),
                   Text(
-                    '${viewModel.interventions.length} risultati',
+                    '${viewModel.interventions.length} risultati trovati',
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
@@ -129,7 +130,7 @@ class _InterventionsListViewState extends State<InterventionsListView> {
                 ],
               ),
             ),
-            
+
             // Lista Interventi
             Expanded(
               child: viewModel.isLoading
@@ -160,13 +161,17 @@ class _InterventionsListViewState extends State<InterventionsListView> {
   Widget _buildInterventionItem(BuildContext context, Inspection item, InterventionsViewModel viewModel) {
     final tour = item.getStringDetailValue(Inspection.keyInspectionTour);
     final date = item.getStringDetailValue(Inspection.keyPlannedDate);
-    final plant = item.getStringDetailValue(Inspection.keyPlant);
-    final subPlant = item.getStringDetailValue(Inspection.keySubPlant);
+    final plant = item.getStringDetailValueLabel(Inspection.keyPlant);
+    final subPlant = item.getStringDetailValueLabel(Inspection.keySubPlant);
     final percentage = viewModel.getCompletionPercentage(item.idext);
 
     return InkWell(
       onTap: () {
-        // Navigate to details
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => AssetListView(inspection: item),
+          ),
+        );
       },
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 20.0),
@@ -224,7 +229,7 @@ class _InterventionsListViewState extends State<InterventionsListView> {
 
   Widget _buildPercentageCircle(int percentage) {
     if (percentage < 0) return const SizedBox.shrink();
-    
+
     return Stack(
       alignment: Alignment.center,
       children: [

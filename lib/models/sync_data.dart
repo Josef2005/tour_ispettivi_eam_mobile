@@ -118,9 +118,9 @@ class AppUser {
   factory AppUser.fromJson(Map<String, dynamic> json) {
     return AppUser(
       id: (json['id']?.toString() ?? json['Id']?.toString() ?? '0').trim(),
-      firstName: json['name'] ?? json['nome'] ?? json['FirstName'] ?? '',
-      lastName: json['surname'] ?? json['cognome'] ?? json['LastName'] ?? '',
-      username: json['username'] ?? json['UserName'] ?? '',
+      firstName: json['FirstName'] ?? json['name'] ?? json['nome'] ?? json['firstname'] ?? '',
+      lastName: json['LastName'] ?? json['surname'] ?? json['cognome'] ?? json['Description'] ?? json['lastname'] ?? '',
+      username: json['username'] ?? json['UserName'] ?? json['UserName'] ?? '',
       authTags: Plant._parseAuthTags(json['authTags'] ?? json['AuthTags']),
     );
   }

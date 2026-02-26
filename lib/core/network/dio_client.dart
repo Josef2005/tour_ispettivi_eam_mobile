@@ -16,12 +16,13 @@ class DioClient {
     _dio = Dio(
       BaseOptions(
         baseUrl: AppConfig.baseUrl, // Utilizza l'URL definito in AppConfig
-        connectTimeout: const Duration(seconds: 120),
-        receiveTimeout: const Duration(seconds: 120),
-        sendTimeout: const Duration(seconds: 120),
+        connectTimeout: const Duration(seconds: 10),
+        receiveTimeout: const Duration(seconds: 10),
+        sendTimeout: const Duration(seconds: 10),
         headers: {
-          'stab': AppConfig.stabHeader,         // '2'
+          'stab': AppConfig.stabHeader, // '2'
           'clientName': AppConfig.clientNameHeader, // 'Mobile'
+          'Cache-Control': 'no-cache',
         },
         listFormat: ListFormat.multi, // Parametri ripetuti come key=val1&key=val2 (stile Retrofit)
       ),

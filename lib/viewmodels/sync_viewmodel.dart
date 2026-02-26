@@ -26,7 +26,7 @@ class SyncViewModel extends ChangeNotifier {
 
   // Filtra gli impianti in base ai tag di autorizzazione dell'utente
   List<Plant> get plants => _plants.where((p) => _currentUser?.hasAccess(p.authTags) ?? false).toList();
-  
+
   // Filtra i sotto-impianti in base all'impianto selezionato e ai tag dell'utente
   List<SubPlant> get subPlants => _subPlants
       .where((s) =>
@@ -34,7 +34,7 @@ class SyncViewModel extends ChangeNotifier {
           s.referenceId.contains(_selectedPlant!.id) &&
           (_currentUser?.hasAccess(s.authTags) ?? false))
       .toList();
-      
+
   List<AppUser> get users => _users.where((u) => _currentUser?.hasAccess(u.authTags) ?? false).toList();
   List<ShiftLeader> get shiftLeaders => _shiftLeaders.where((s) => _currentUser?.hasAccess(s.authTags) ?? false).toList();
 
@@ -67,7 +67,7 @@ class SyncViewModel extends ChangeNotifier {
    */
   Future<void> setPlant(Plant? value) async {
     _selectedPlant = value;
-    
+
     // Pulisce la selezione del sotto-impianto se non appartiene al nuovo impianto
     if (value == null) {
       _selectedSubPlant = null;
@@ -77,9 +77,9 @@ class SyncViewModel extends ChangeNotifier {
         _selectedSubPlant = filtered.isNotEmpty ? filtered.first : null;
       }
     }
-    
+
     notifyListeners();
-    
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('IMPIANTO', _selectedPlant?.id ?? '');
     await prefs.setString('SOTTO_IMPIANTO', _selectedSubPlant?.id ?? '');
@@ -91,7 +91,7 @@ class SyncViewModel extends ChangeNotifier {
   Future<void> setSubPlant(SubPlant? value) async {
     _selectedSubPlant = value;
     notifyListeners();
-    
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('SOTTO_IMPIANTO', value?.id ?? '');
   }
@@ -102,7 +102,7 @@ class SyncViewModel extends ChangeNotifier {
   Future<void> setUser(AppUser? value) async {
     _selectedUser = value;
     notifyListeners();
-    
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('X_ID_MAN_MANUTENTORE', value?.id ?? '');
     // Salviamo anche in USER_ID_SELECTED per riferimento, ma il principale è X_ID_MAN_MANUTENTORE
@@ -115,7 +115,7 @@ class SyncViewModel extends ChangeNotifier {
   Future<void> setShiftLeader(ShiftLeader? value) async {
     _selectedShiftLeader = value;
     notifyListeners();
-    
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('ResponsabileId', value?.id ?? '');
   }
@@ -155,15 +155,15 @@ class SyncViewModel extends ChangeNotifier {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
-    
+
     try {
       // Recupera prima le info dell'utente loggato per i tag di autorizzazione
       _currentUser = await _syncService.getCurrentUser();
       if (_currentUser != null) {
         _userName = _currentUser!.username;
-        _displayName = _currentUser!.firstName.isNotEmpty ? _currentUser!.firstName : _userName;
-        
-        // Android Configuration.getUserId uses "USER_ID"
+        String fullName = "${_currentUser!.firstName} ${_currentUser!.lastName}".trim();
+        _displayName = fullName.isNotEmpty ? fullName : _userName;
+
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('USER_ID', _currentUser!.id);
       }
@@ -177,12 +177,12 @@ class SyncViewModel extends ChangeNotifier {
       _subPlants = subPlantsData.map((e) => SubPlant.fromJson(e)).toList();
 
       // Recupera Manutentori (Utenti)
-      final usersData = await _syncService.getMetadata('udvMan_Manutentore_RuoloIspezione'); 
+      final usersData = await _syncService.getMetadata('udvMan_Manutentore_RuoloIspezione');
       _users = usersData.map((e) => AppUser.fromJson(e)).toList();
 
       // Recupera Responsabili (Shift Leaders)
       final shiftLeadersData = await _syncService.getMetadata('udvMan_ManutentoreISPEZIONE_RuoloResponsabile');
-      _shiftLeaders = [ShiftLeader(id: '0', name: "-", authTags: _currentUser?.authTags ?? [])] + 
+      _shiftLeaders = [ShiftLeader(id: '0', name: "-", authTags: _currentUser?.authTags ?? [])] +
                       shiftLeadersData.map((e) => ShiftLeader.fromJson(e)).toList();
 
       // Aggiorna le selezioni dalle nuove liste (mantenendo gli ID se possibile)
@@ -211,7 +211,7 @@ class SyncViewModel extends ChangeNotifier {
       if (_selectedSubPlant != null) await prefs.setString('SOTTO_IMPIANTO', _selectedSubPlant!.id);
       if (_selectedUser != null) await prefs.setString('USER_ID', _selectedUser!.id);
       if (_selectedShiftLeader != null) await prefs.setString('ResponsabileId', _selectedShiftLeader!.id);
-      
+
     } catch (e) {
       print('Ricaricamento fallito: $e');
       _errorMessage = 'Caricamento dati fallito: $e';
