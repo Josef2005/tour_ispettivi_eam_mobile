@@ -7,8 +7,8 @@ class InspectionActivity {
   final String? code;
   final String? description;
   final String? ispezioneId; // Mappato su ispezione_id nel DB
-  final List<ItemProperty> details;
-  final int sync;
+  List<ItemProperty> details;
+  int sync;
 
   InspectionActivity({
     this.id,
@@ -97,6 +97,82 @@ class InspectionActivity {
     return false;
   }
 
+  void setDetailValue(String name, String value) {
+    var newList = List<ItemProperty>.from(details);
+    try {
+      final prop = newList.firstWhere((e) => e.name.toUpperCase() == name.toUpperCase());
+      int index = newList.indexOf(prop);
+      newList[index] = ItemProperty(
+        name: prop.name,
+        value: value,
+        label: prop.label,
+        valueLabel: prop.valueLabel,
+      );
+    } catch (_) {
+      newList.add(ItemProperty(name: name, value: value));
+    }
+    details = newList;
+  }
+
+  void setDetailLabel(String name, String label) {
+    var newList = List<ItemProperty>.from(details);
+    try {
+      final prop = newList.firstWhere((e) => e.name.toUpperCase() == name.toUpperCase());
+      int index = newList.indexOf(prop);
+      newList[index] = ItemProperty(
+        name: prop.name,
+        value: prop.value,
+        label: prop.label,
+        valueLabel: label,
+      );
+    } catch (_) {
+      newList.add(ItemProperty(name: name, valueLabel: label));
+    }
+    details = newList;
+  }
+
+  void setRisposta(String? value) {
+    setDetailValue('Risposta', value ?? '');
+  }
+
+  void setNota(String? value) {
+    setDetailValue('Nota', value ?? '');
+  }
+
+  void setAnomalia(String value) {
+    setDetailValue('ANOMALIA', value);
+  }
+
+  void setSync(int value) {
+    sync = value;
+  }
+
+  void setTimestamp() {
+    final now = DateTime.now().toUtc().toIso8601String().replaceFirst('Z', '.000Z');
+    setDetailValue('Timestamp', now);
+  }
+
+  String getTipoRisposta() {
+    return getStringDetailValue('TIPO_RISPOSTA');
+  }
+
+  String getRisposta() {
+    return getStringDetailValue('Risposta');
+  }
+
+  String getNota() {
+    return getStringDetailValue('Nota');
+  }
+
+  String getAnomalia() {
+    return getStringDetailValue('ANOMALIA');
+  }
+
+  Future<void> update(dynamic dbHelper) async {
+    // Si assume che dbHelper esponga insertOrUpdateItem
+    await dbHelper.insertOrUpdateItem('ispezioni_att', toMap(), idext);
+  }
+
   /*
    * Converte l'attività nel formato TableRow richiesto dal server (Parity Android)
    */
@@ -106,8 +182,8 @@ class InspectionActivity {
       {'ColumnName': 'Risposta', 'Value': getStringDetailValue('Risposta')},
       {'ColumnName': 'NonInMarcia', 'Value': getStringDetailValue('NonInMarcia')},
       {'ColumnName': 'Nota', 'Value': getStringDetailValue('Nota')},
-      {'ColumnName': 'Anomalia', 'Value': getStringDetailValue('Anomalia')},
-      {'ColumnName': 'TipoAttivita', 'Value': getStringDetailValue('TipoAttivita')},
+      {'ColumnName': 'ANOMALIA', 'Value': getStringDetailValue('ANOMALIA')},
+      {'ColumnName': 'TIPO_RISPOSTA', 'Value': getStringDetailValue('TIPO_RISPOSTA')},
       {'ColumnName': 'AssetId', 'Value': getStringDetailValue('AssetId')},
       {'ColumnName': 'TagName', 'Value': getStringDetailValue('TagName')},
       {'ColumnName': 'Timestamp', 'Value': getStringDetailValue('Timestamp')},
@@ -124,7 +200,7 @@ class InspectionActivity {
   /*
    * Restituisce se l'attività è in anomalia
    */
-  bool get isAnomaly => getStringDetailValue('Anomalia') == '1';
+  bool get isAnomaly => getStringDetailValue('ANOMALIA') == '1';
 
   /*
    * Restituisce la nota dell'attività

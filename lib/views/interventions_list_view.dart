@@ -171,7 +171,7 @@ class _InterventionsListViewState extends State<InterventionsListView> {
           MaterialPageRoute(
             builder: (context) => AssetListView(inspection: item),
           ),
-        );
+        ).then((_) => viewModel.loadInterventions());
       },
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 20.0),
@@ -230,6 +230,14 @@ class _InterventionsListViewState extends State<InterventionsListView> {
   Widget _buildPercentageCircle(int percentage) {
     if (percentage < 0) return const SizedBox.shrink();
 
+    if (percentage == 100) {
+      return const CircleAvatar(
+        radius: 20,
+        backgroundColor: Color(0xFF28A745),
+        child: Icon(Icons.check, color: Colors.white, size: 24),
+      );
+    }
+
     return Stack(
       alignment: Alignment.center,
       children: [
@@ -240,9 +248,7 @@ class _InterventionsListViewState extends State<InterventionsListView> {
             value: percentage / 100,
             strokeWidth: 3,
             backgroundColor: Colors.grey.shade100,
-            valueColor: AlwaysStoppedAnimation<Color>(
-              percentage == 100 ? Colors.green : const Color(0xFF4A72B2),
-            ),
+            valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF4A72B2)),
           ),
         ),
         Text(

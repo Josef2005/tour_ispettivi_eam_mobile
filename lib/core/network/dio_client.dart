@@ -17,9 +17,9 @@ class DioClient {
     _dio = Dio(
       BaseOptions(
         baseUrl: AppConfig.baseUrl, // Utilizza l'URL definito in AppConfig
-        connectTimeout: const Duration(seconds: 5),
-        receiveTimeout: const Duration(seconds: 5),
-        sendTimeout: const Duration(seconds: 5),
+        connectTimeout: const Duration(seconds: 10),
+        receiveTimeout: const Duration(seconds: 10),
+        sendTimeout: const Duration(seconds: 10),
         headers: {
           'stab': AppConfig.stabHeader, // '2'
           'clientName': AppConfig.clientNameHeader, // 'Mobile'

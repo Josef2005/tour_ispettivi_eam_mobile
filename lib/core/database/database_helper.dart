@@ -21,16 +21,20 @@ class DatabaseHelper {
   }
 
   Future<Database> _initDatabase() async {
+    const version = 6;
     if (kIsWeb) {
       print('DB: Inizializzazione database per il Web...');
       var factory = databaseFactoryFfiWeb;
       return await factory.openDatabase(
         'tour_ispettivi_db',
         options: OpenDatabaseOptions(
-          version: 5,
-          onCreate: (db, version) => _onCreate(db, version),
-          onUpgrade: (db, oldVersion, newVersion) {
-            print('DB: Upgrade database Web da versione $oldVersion a $newVersion');
+          version: version,
+          onCreate: _onCreate,
+          onUpgrade: (db, oldVersion, newVersion) async {
+            print('DB: Upgrade database da versione $oldVersion a $newVersion');
+            if (oldVersion < 6) {
+              await _createAttachmentTable(db);
+            }
           },
         ),
       );
@@ -40,14 +44,16 @@ class DatabaseHelper {
     print('DB: Inizializzazione database al percorso: $path');
     return await openDatabase(
       path,
-      version: 5,
+      version: version,
       onCreate: _onCreate,
-      onUpgrade: (db, oldVersion, newVersion) {
+      onUpgrade: (db, oldVersion, newVersion) async {
         print('DB: Upgrade database da versione $oldVersion a $newVersion');
+        if (oldVersion < 6) {
+          await _createAttachmentTable(db);
+        }
       },
     );
   }
-
 
   Future _onCreate(Database db, int version) async {
     print('DB: Creazione tabelle...');
@@ -116,6 +122,9 @@ class DatabaseHelper {
         )
       ''');
 
+      // Creazione tabella 'Attachment' (Parity Android)
+      await _createAttachmentTable(db);
+
       // Indici per le prestazioni
       await db.execute('CREATE INDEX idx_ispezioni_idext ON ispezioni (idext)');
       await db.execute('CREATE INDEX idx_item_idext ON item (idext)');
@@ -124,6 +133,23 @@ class DatabaseHelper {
       print('DB ERROR: Errore durante la creazione delle tabelle: $e');
       rethrow;
     }
+  }
+
+  Future<void> _createAttachmentTable(Database db) async {
+    print('DB: Creazione tabella Attachment...');
+    await db.execute('''
+      CREATE TABLE Attachment (
+        AttachmentId INTEGER PRIMARY KEY AUTOINCREMENT,
+        IdExt INTEGER,
+        ItemId TEXT,
+        UserId TEXT,
+        DateUploaded TEXT,
+        FileName TEXT,
+        MIMEType TEXT,
+        Sync INTEGER DEFAULT 0
+      )
+    ''');
+    await db.execute('CREATE INDEX idx_attachment_itemid ON Attachment (ItemId)');
   }
 
   /// Batch insert for performance
@@ -231,6 +257,7 @@ class DatabaseHelper {
         await txn.delete('ispezioni');
         await txn.delete('itemclass');
         await txn.delete('ispezioni_att');
+        await txn.delete('Attachment');
         await txn.delete('version');
       });
       print('DB: Reset dati completato.');

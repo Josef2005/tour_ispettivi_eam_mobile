@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/inspection.dart';
+import '../models/inspection_activity.dart';
 import '../viewmodels/asset_viewmodel.dart';
 import '../viewmodels/sync_viewmodel.dart';
+import '../views/inspection_activity_list_view.dart';
 
 class AssetListView extends StatelessWidget {
   final Inspection inspection;
@@ -205,8 +207,18 @@ class _AssetListContent extends StatelessWidget {
                             ],
                           ),
                           onTap: () {
-                            // Navigazione futura verso il dettaglio attività
-                            print("Selezionato Asset ID: ${asset['id']}");
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => InspectionActivityListView(
+                                  inspection: viewModel.inspection,
+                                  assetId: asset['id'],
+                                  assetLabel: asset['label'],
+                                  activities: (asset['activities'] as List).cast<InspectionActivity>(),
+                                  fullAssetList: viewModel.assetList,
+                                ),
+                              ),
+                            ).then((_) => viewModel.loadActivities());
                           },
                         ),
                       );
@@ -303,23 +315,32 @@ class _AssetListContent extends StatelessWidget {
     );
   }
 
-  void _showSuccess(BuildContext context, String message, {bool pop = false}) {
+  void _showSuccess(BuildContext context, String message, {bool pop = false}) async {
+    if (!context.mounted) return;
+    
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text("Operazione Completata"),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              if (pop) Navigator.pop(context);
-            },
-            child: const Text("OK"),
-          ),
-        ],
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text("Operazione Completata", textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.check_circle_rounded, color: Color(0xFF28A745), size: 80),
+            const SizedBox(height: 20),
+            Text(message, textAlign: TextAlign.center, style: const TextStyle(fontSize: 14)),
+          ],
+        ),
       ),
     );
+
+    await Future.delayed(const Duration(seconds: 2));
+    
+    if (context.mounted) {
+      Navigator.pop(context); // Close dialog
+      if (pop) Navigator.pop(context); // Go back (back to interventions)
+    }
   }
 
   // Widget da mostrare quando non ci sono dati (es. se il sync fallisce)
@@ -344,6 +365,14 @@ class _AssetListContent extends StatelessWidget {
   }
 
   Widget _buildPercentageCircle(int percentage) {
+    if (percentage == 100) {
+      return const CircleAvatar(
+        radius: 16,
+        backgroundColor: Color(0xFF28A745),
+        child: Icon(Icons.check, color: Colors.white, size: 20),
+      );
+    }
+
     return Stack(
       alignment: Alignment.center,
       children: [
@@ -354,8 +383,7 @@ class _AssetListContent extends StatelessWidget {
             value: percentage / 100,
             strokeWidth: 3,
             backgroundColor: Colors.grey.shade200,
-            valueColor: AlwaysStoppedAnimation<Color>(
-                percentage == 100 ? Colors.green : Colors.grey.shade400),
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.grey.shade400),
           ),
         ),
         Text(
