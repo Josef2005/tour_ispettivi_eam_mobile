@@ -13,6 +13,7 @@ class InspectionActivityListView extends StatelessWidget {
   final String assetLabel;
   final List<InspectionActivity> activities;
   final List<Map<String, dynamic>> fullAssetList;
+  final VoidCallback? onRefresh;
 
   const InspectionActivityListView({
     super.key,
@@ -21,6 +22,7 @@ class InspectionActivityListView extends StatelessWidget {
     required this.assetLabel,
     required this.activities,
     required this.fullAssetList,
+    this.onRefresh,
   });
 
   @override
@@ -32,15 +34,22 @@ class InspectionActivityListView extends StatelessWidget {
         assetLabel: assetLabel,
         initialActivities: activities,
       ),
-      child: _ActivityListContent(fullAssetList: fullAssetList),
+      child: _ActivityListContent(
+        fullAssetList: fullAssetList,
+        onRefresh: onRefresh,
+      ),
     );
   }
 }
 
 class _ActivityListContent extends StatelessWidget {
   final List<Map<String, dynamic>> fullAssetList;
+  final VoidCallback? onRefresh;
 
-  const _ActivityListContent({required this.fullAssetList});
+  const _ActivityListContent({
+    required this.fullAssetList,
+    this.onRefresh,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -105,7 +114,10 @@ class _ActivityListContent extends StatelessWidget {
                           color: Colors.white,
                           size: 28,
                         ),
-                        onPressed: () => Navigator.of(context).pop(true),
+                        onPressed: () {
+                          if (onRefresh != null) onRefresh!();
+                          Navigator.of(context).pop();
+                        },
                       ),
                     ],
                   ),
@@ -123,7 +135,10 @@ class _ActivityListContent extends StatelessWidget {
                           size: 20,
                           color: Color(0xFF4A72B2),
                         ),
-                        onPressed: () => Navigator.of(context).pop(true),
+                        onPressed: () {
+                          if (onRefresh != null) onRefresh!();
+                          Navigator.of(context).pop();
+                        },
                       ),
                       Expanded(
                         child: Column(
@@ -396,9 +411,11 @@ class _ActivityListContent extends StatelessWidget {
                       final nextAsset = viewModel.getNextIncompleteAsset(fullAssetList);
 
                       if (nextAsset != null) {
-                        // USIAMO push INVECE DI pushReplacement
-                        // Questo mantiene la catena di navigazione corretta
-                        await Navigator.of(context).push(
+                        // Segnala alla lista principale di rinfrescarsi in background
+                        if (onRefresh != null) onRefresh!();
+
+                        // USIAMO pushReplacement per appiattire la catena di navigazione
+                        Navigator.of(context).pushReplacement(
                           MaterialPageRoute(
                             builder: (_) => InspectionActivityListView(
                               inspection: viewModel.inspection,
@@ -407,18 +424,14 @@ class _ActivityListContent extends StatelessWidget {
                               activities: (nextAsset['activities'] as List)
                                   .cast<InspectionActivity>(),
                               fullAssetList: fullAssetList,
+                              onRefresh: onRefresh,
                             ),
                           ),
                         );
-
-                        // IMPORTANTE: Quando l'utente torna indietro dall'asset successivo,
-                        // noi facciamo un pop(true) per tornare alla lista principale e forzare il refresh
-                        if (context.mounted) {
-                          Navigator.of(context).pop(true);
-                        }
                       } else {
-                        // Se non ci sono più asset, torniamo alla lista principale passando 'true'
-                        Navigator.of(context).pop(true);
+                        // Se non ci sono più asset, segnaliamo il refresh e torniamo indietro
+                        if (onRefresh != null) onRefresh!();
+                        Navigator.of(context).pop();
                       }
                     }
                   },

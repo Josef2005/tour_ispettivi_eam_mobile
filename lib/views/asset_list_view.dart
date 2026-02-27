@@ -217,7 +217,7 @@ class _AssetListContent extends StatelessWidget {
                                 ),
                                 onTap: () async {
                                   // 1. Aspetti che l'utente finisca di fare le attività e torni indietro
-                                  final result = await Navigator.push(
+                                  Navigator.push(
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) => InspectionActivityListView(
@@ -226,16 +226,13 @@ class _AssetListContent extends StatelessWidget {
                                         assetLabel: asset['label'],
                                         activities: asset['activities'],
                                         fullAssetList: viewModel.assetList,
+                                        onRefresh: () => viewModel.loadActivities(),
                                       ),
                                     ),
                                   );
 
-                                  // 2. QUESTA È LA PARTE CHE TI MANCAVA:
-                                  // Se l'utente torna indietro (result sarà true), ricarichiamo i dati dal DB
-                                  if (result == true) {
-                                    // Chiama il metodo loadActivities del ViewModel che mi hai appena postato
-                                    viewModel.loadActivities();
-                                  }
+                                  // Nota: il ricaricamento ora è gestito via onRefresh
+                                  // rimosso il .then() e l'await result
                                 },
                               ),
                             );
