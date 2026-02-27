@@ -14,11 +14,17 @@ class ItemProperty {
   });
 
   factory ItemProperty.fromJson(Map<String, dynamic> json) {
+    // Gestione case-insensitive per parity tra DB e Server
+    final name = json['Name']?.toString() ?? json['name']?.toString() ?? '';
+    final value = json['Value']?.toString() ?? json['value']?.toString();
+    final label = json['Label']?.toString() ?? json['label']?.toString();
+    final valueLabel = json['ValueLabel']?.toString() ?? json['valueLabel']?.toString();
+    
     return ItemProperty(
-      name: json['Name'] ?? '',
-      value: json['Value']?.toString(),
-      label: json['Label']?.toString(),
-      valueLabel: json['ValueLabel']?.toString(),
+      name: name,
+      value: value,
+      label: label,
+      valueLabel: valueLabel,
     );
   }
 

@@ -77,7 +77,12 @@ class ActivityListItem extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => AttachmentListView(activity: activity),
+                    builder: (context) => AttachmentListView(
+                      activity: activity,
+                      activityName: (activity.getStringDetailValueLabel('AttivitaID').isEmpty 
+                        ? activity.description ?? '' 
+                        : activity.getStringDetailValueLabel('AttivitaID')),
+                    ),
                   ),
                 ).then((_) {
                   viewModel.loadAttachmentCounts();

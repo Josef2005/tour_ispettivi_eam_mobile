@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import '../core/database/database_helper.dart';
 import '../models/inspection.dart';
@@ -79,7 +81,7 @@ class ActivityListViewModel extends ChangeNotifier {
 
     try {
       // Recupera il flag NON_IN_MARCIA dallo stato selezionato
-      final items = await _dbHelper.queryItems('items', where: 'idext = ?', whereArgs: [statoAssetId]);
+      final items = await _dbHelper.queryItems('item', where: 'idext = ?', whereArgs: [statoAssetId]);
       if (items.isEmpty) return;
       
       final statoItem = Item.fromMap(items.first);
@@ -120,7 +122,6 @@ class ActivityListViewModel extends ChangeNotifier {
     activity.setTimestamp();
     activity.setSync(0);
     _calculateAnomalia(activity);
-    
     await activity.update(_dbHelper);
     notifyListeners();
   }
@@ -204,13 +205,13 @@ class ActivityListViewModel extends ChangeNotifier {
     return null;
   }
 
-  InspectionActivity? getNextAssetActivity(List<Map<String, dynamic>> fullAssetList) {
-    int currentIndex = fullAssetList.indexWhere((asset) => asset['id'] == assetId);
-    if (currentIndex != -1 && currentIndex + 1 < fullAssetList.length) {
-      final nextAsset = fullAssetList[currentIndex + 1];
-      return (nextAsset['activities'] as List<InspectionActivity>).first;
+  Map<String, dynamic>? getNextIncompleteAsset(List<Map<String, dynamic>> fullAssetList) {
+    // Cerca il primo asset che non sia al 100%
+    try {
+      return fullAssetList.firstWhere((asset) => (asset['percentage'] as int? ?? 0) < 100);
+    } catch (_) {
+      return null;
     }
-    return null;
   }
 
   Future<void> loadAttachmentCounts() async {

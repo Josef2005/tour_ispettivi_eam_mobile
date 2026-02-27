@@ -209,7 +209,6 @@ class _InterventionsListViewState extends State<InterventionsListView> {
                             fontSize: 13,
                             color: Colors.black45,
                           ),
-                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],

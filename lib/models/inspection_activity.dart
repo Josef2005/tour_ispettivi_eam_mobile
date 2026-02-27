@@ -89,12 +89,14 @@ class InspectionActivity {
     if (nonInMarcia == '1') return true;
 
     String risposta = getStringDetailValue('Risposta');
-    if (checkAnswer(risposta)) return true;
+    bool hasRisposta = checkAnswer(risposta);
 
     String nota = getStringDetailValue('Nota');
-    if (nota.trim().isNotEmpty) return true;
+    bool hasNota = nota.trim().isNotEmpty;
 
-    return false;
+    bool completed = hasRisposta || hasNota;
+    
+    return completed;
   }
 
   void setDetailValue(String name, String value) {

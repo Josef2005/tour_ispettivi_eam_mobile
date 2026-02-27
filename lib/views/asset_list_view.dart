@@ -47,7 +47,7 @@ class _AssetListContent extends StatelessWidget {
                         'assets/images/logo_app.png',
                         height: 32,
                         errorBuilder: (context, error, stackTrace) =>
-                        const Icon(Icons.circle, color: Colors.white, size: 24),
+                            const Icon(Icons.circle, color: Colors.white, size: 24),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -76,7 +76,8 @@ class _AssetListContent extends StatelessWidget {
                       ),
                       IconButton(
                         icon: const Icon(Icons.home, color: Colors.white),
-                        onPressed: () => Navigator.of(context).popUntil((route) => route.isFirst),
+                        onPressed: () =>
+                            Navigator.of(context).popUntil((route) => route.isFirst),
                       ),
                       IconButton(
                         icon: const Icon(Icons.sync, color: Colors.white),
@@ -115,10 +116,7 @@ class _AssetListContent extends StatelessWidget {
                           ),
                           Text(
                             'TOUR: ${inspection.getStringDetailValue(Inspection.keyInspectionTour)}',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Colors.black54,
-                            ),
+                            style: const TextStyle(fontSize: 12, color: Colors.black54),
                           ),
                         ],
                       ),
@@ -157,73 +155,92 @@ class _AssetListContent extends StatelessWidget {
                   child: viewModel.assetList.isEmpty && !viewModel.isLoading
                       ? _buildEmptyState() // Gestione lista vuota (es. Errore 500)
                       : ListView.builder(
-                    itemCount: viewModel.assetList.length,
-                    itemBuilder: (context, index) {
-                      final asset = viewModel.assetList[index];
-                      final List activities = asset['activities'] ?? [];
+                          itemCount: viewModel.assetList.length,
+                          itemBuilder: (context, index) {
+                            final asset = viewModel.assetList[index];
+                            final List activities = asset['activities'] ?? [];
 
-                      return Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(4),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 2,
-                              offset: const Offset(0, 1),
-                            ),
-                          ],
-                        ),
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          title: Text(
-                            (asset['label']?.toString().isNotEmpty == true
-                                ? asset['label'].toString()
-                                : "ASSET ${asset['id']}").toUpperCase(),
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF4A72B2),
-                            ),
-                          ),
-                          // SOTTOTITOLO: Qui vedrai il numero di attività (es. "2 attività")
-                          subtitle: Padding(
-                            padding: const EdgeInsets.only(top: 4.0),
-                            child: Text(
-                              "${activities.length} ${activities.length == 1 ? 'attività' : 'attività'}",
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey.shade600,
+                            return Container(
+                              margin: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 4,
                               ),
-                            ),
-                          ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              _buildPercentageCircle(asset['percentage'] as int),
-                              const SizedBox(width: 8),
-                              const Icon(Icons.chevron_right, color: Colors.grey, size: 20),
-                            ],
-                          ),
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => InspectionActivityListView(
-                                  inspection: viewModel.inspection,
-                                  assetId: asset['id'],
-                                  assetLabel: asset['label'],
-                                  activities: (asset['activities'] as List).cast<InspectionActivity>(),
-                                  fullAssetList: viewModel.assetList,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(4),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.05),
+                                    blurRadius: 2,
+                                    offset: const Offset(0, 1),
+                                  ),
+                                ],
+                              ),
+                              child: ListTile(
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
                                 ),
+                                title: Text(
+                                  (asset['label']?.toString().isNotEmpty == true
+                                          ? asset['label'].toString()
+                                          : "ASSET ${asset['id']}")
+                                      .toUpperCase(),
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF4A72B2),
+                                  ),
+                                ),
+                                // SOTTOTITOLO: Qui vedrai il numero di attività (es. "2 attività")
+                                subtitle: Padding(
+                                  padding: const EdgeInsets.only(top: 4.0),
+                                  child: Text(
+                                    "${activities.length} ${activities.length == 1 ? 'attività' : 'attività'}",
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                  ),
+                                ),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    _buildPercentageCircle(asset['percentage'] as int),
+                                    const SizedBox(width: 8),
+                                    const Icon(
+                                      Icons.chevron_right,
+                                      color: Colors.grey,
+                                      size: 20,
+                                    ),
+                                  ],
+                                ),
+                                onTap: () async {
+                                  // 1. Aspetti che l'utente finisca di fare le attività e torni indietro
+                                  final result = await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => InspectionActivityListView(
+                                        inspection: viewModel.inspection,
+                                        assetId: asset['id'],
+                                        assetLabel: asset['label'],
+                                        activities: asset['activities'],
+                                        fullAssetList: viewModel.assetList,
+                                      ),
+                                    ),
+                                  );
+
+                                  // 2. QUESTA È LA PARTE CHE TI MANCAVA:
+                                  // Se l'utente torna indietro (result sarà true), ricarichiamo i dati dal DB
+                                  if (result == true) {
+                                    // Chiama il metodo loadActivities del ViewModel che mi hai appena postato
+                                    viewModel.loadActivities();
+                                  }
+                                },
                               ),
-                            ).then((_) => viewModel.loadActivities());
+                            );
                           },
                         ),
-                      );
-                    },
-                  ),
                 ),
 
                 // Bottom Buttons
@@ -237,10 +254,15 @@ class _AssetListContent extends StatelessWidget {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF4A72B2),
                             foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(4),
+                            ),
                             padding: const EdgeInsets.symmetric(vertical: 16),
                           ),
-                          child: const Text('NON IN CARICO', style: TextStyle(fontWeight: FontWeight.bold)),
+                          child: const Text(
+                            'NON IN CARICO',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -250,10 +272,15 @@ class _AssetListContent extends StatelessWidget {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF4A72B2),
                             foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(4),
+                            ),
                             padding: const EdgeInsets.symmetric(vertical: 16),
                           ),
-                          child: const Text('CONCLUDI ISPEZIONE', style: TextStyle(fontWeight: FontWeight.bold)),
+                          child: const Text(
+                            'CONCLUDI ISPEZIONE',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
                         ),
                       ),
                     ],
@@ -293,8 +320,14 @@ class _AssetListContent extends StatelessWidget {
         title: const Text("Concludi Ispezione"),
         content: const Text("Sei sicuro di voler concludere l'ispezione?"),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("ANNULLA")),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text("CONFERMA")),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("ANNULLA"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("CONFERMA"),
+          ),
         ],
       ),
     );
@@ -310,33 +343,41 @@ class _AssetListContent extends StatelessWidget {
   }
 
   void _showError(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.red),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message), backgroundColor: Colors.red));
   }
 
   void _showSuccess(BuildContext context, String message, {bool pop = false}) async {
     if (!context.mounted) return;
-    
+
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text("Operazione Completata", textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          "Operazione Completata",
+          textAlign: TextAlign.center,
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(Icons.check_circle_rounded, color: Color(0xFF28A745), size: 80),
             const SizedBox(height: 20),
-            Text(message, textAlign: TextAlign.center, style: const TextStyle(fontSize: 14)),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 14),
+            ),
           ],
         ),
       ),
     );
 
     await Future.delayed(const Duration(seconds: 2));
-    
+
     if (context.mounted) {
       Navigator.pop(context); // Close dialog
       if (pop) Navigator.pop(context); // Go back (back to interventions)

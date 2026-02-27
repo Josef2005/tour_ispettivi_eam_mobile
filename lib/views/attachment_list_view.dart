@@ -6,8 +6,13 @@ import '../models/attachment.dart';
 
 class AttachmentListView extends StatefulWidget {
   final InspectionActivity activity;
+  final String activityName;
 
-  const AttachmentListView({super.key, required this.activity});
+  const AttachmentListView({
+    super.key, 
+    required this.activity,
+    required this.activityName,
+  });
 
   @override
   State<AttachmentListView> createState() => _AttachmentListViewState();
@@ -19,7 +24,10 @@ class _AttachmentListViewState extends State<AttachmentListView> {
   @override
   void initState() {
     super.initState();
-    _viewModel = AttachmentViewModel(itemId: widget.activity.idext);
+    _viewModel = AttachmentViewModel(
+      itemId: widget.activity.idext,
+      activityName: widget.activityName,
+    );
   }
 
   @override
@@ -31,7 +39,22 @@ class _AttachmentListViewState extends State<AttachmentListView> {
           return Scaffold(
             backgroundColor: Colors.white,
             appBar: AppBar(
-              title: const Text('Allegati'),
+              title: Padding(
+                padding: const EdgeInsets.only(bottom: 8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text('Allegati', style: TextStyle(fontSize: 18)),
+                    const SizedBox(height: 4),
+                    Text(
+                      viewModel.activityName.toUpperCase(),
+                      style: const TextStyle(fontSize: 12, color: Colors.white70),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
               backgroundColor: const Color(0xFF4A72B2),
               foregroundColor: Colors.white,
             ),

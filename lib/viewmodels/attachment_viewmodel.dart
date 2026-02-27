@@ -16,6 +16,7 @@ class AttachmentViewModel extends ChangeNotifier {
   final ImagePicker _picker = ImagePicker();
 
   final String itemId; // activity idext
+  final String activityName;
   List<Attachment> _attachments = [];
   bool _isLoading = false;
   String? _errorMessage;
@@ -24,7 +25,7 @@ class AttachmentViewModel extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
-  AttachmentViewModel({required this.itemId}) {
+  AttachmentViewModel({required this.itemId, required this.activityName}) {
     loadAttachments();
   }
 

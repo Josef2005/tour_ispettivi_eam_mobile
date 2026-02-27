@@ -63,21 +63,50 @@ class _ActivityListContent extends StatelessWidget {
                     children: [
                       Padding(
                         padding: const EdgeInsets.only(right: 12),
-                        child: Image.asset('assets/images/logo_app.png', height: 32, errorBuilder: (_, __, ___) => const Icon(Icons.stars, color: Colors.white, size: 30)),
+                        child: Image.asset(
+                          'assets/images/logo_app.png',
+                          height: 32,
+                          errorBuilder: (_, __, ___) =>
+                              const Icon(Icons.stars, color: Colors.white, size: 30),
+                        ),
                       ),
                       const Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Text('Tour Isp. v.25', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
-                            Text('(ffisica)', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                            Text(
+                              'Tour Isp. v.25',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                            ),
+                            Text(
+                              '(ffisica)',
+                              style: TextStyle(color: Colors.white70, fontSize: 11),
+                            ),
                           ],
                         ),
                       ),
-                      IconButton(icon: const Icon(Icons.home, color: Colors.white, size: 28), onPressed: () => Navigator.of(context).popUntil((route) => route.isFirst)),
-                      IconButton(icon: const Icon(Icons.sync, color: Colors.white, size: 28), onPressed: () {}),
-                      IconButton(icon: const Icon(Icons.exit_to_app, color: Colors.white, size: 28), onPressed: () => Navigator.of(context).pop()),
+                      IconButton(
+                        icon: const Icon(Icons.home, color: Colors.white, size: 28),
+                        onPressed: () =>
+                            Navigator.of(context).popUntil((route) => route.isFirst),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.sync, color: Colors.white, size: 28),
+                        onPressed: () {},
+                      ),
+                      IconButton(
+                        icon: const Icon(
+                          Icons.exit_to_app,
+                          color: Colors.white,
+                          size: 28,
+                        ),
+                        onPressed: () => Navigator.of(context).pop(true),
+                      ),
                     ],
                   ),
                 ),
@@ -89,17 +118,35 @@ class _ActivityListContent extends StatelessWidget {
                   child: Row(
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.arrow_back_ios, size: 20, color: Color(0xFF4A72B2)),
-                        onPressed: () => Navigator.of(context).pop(),
+                        icon: const Icon(
+                          Icons.arrow_back_ios,
+                          size: 20,
+                          color: Color(0xFF4A72B2),
+                        ),
+                        onPressed: () => Navigator.of(context).pop(true),
                       ),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Text(viewModel.inspection.idext, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF4A72B2), fontSize: 13)),
-                            Text('TOUR: ${viewModel.inspection.getStringDetailValue(Inspection.keyInspectionTour)}'.toUpperCase(), 
-                                style: const TextStyle(color: Color(0xFF556677), fontSize: 10, overflow: TextOverflow.ellipsis)),
+                            Text(
+                              viewModel.inspection.idext,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF4A72B2),
+                                fontSize: 13,
+                              ),
+                            ),
+                            Text(
+                              'TOUR: ${viewModel.inspection.getStringDetailValue(Inspection.keyInspectionTour)}'
+                                  .toUpperCase(),
+                              style: const TextStyle(
+                                color: Color(0xFF556677),
+                                fontSize: 10,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -130,7 +177,9 @@ class _ActivityListContent extends StatelessWidget {
                                     value: viewModel.percentage / 100,
                                     strokeWidth: 4,
                                     backgroundColor: Colors.grey.shade200,
-                                    valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF4A72B2)),
+                                    valueColor: const AlwaysStoppedAnimation<Color>(
+                                      Color(0xFF4A72B2),
+                                    ),
                                   ),
                                 ),
                                 Text(
@@ -154,12 +203,13 @@ class _ActivityListContent extends StatelessWidget {
                                 Expanded(
                                   child: Text(
                                     viewModel.assetLabel.toUpperCase(),
-                                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF333333)),
-                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF333333),
+                                    ),
                                   ),
                                 ),
-                                if (viewModel.percentage == 100)
-                                  const Icon(Icons.check_circle_rounded, color: Color(0xFF28A745), size: 20),
                               ],
                             ),
                             const SizedBox(height: 2),
@@ -168,11 +218,25 @@ class _ActivityListContent extends StatelessWidget {
                                 child: DropdownButton<Item>(
                                   isDense: true,
                                   value: viewModel.selectedStato,
-                                  icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF4A72B2)),
-                                  items: viewModel.statiAsset.map((s) => DropdownMenuItem(
-                                    value: s,
-                                    child: Text(s.description ?? s.code ?? '', style: const TextStyle(fontSize: 12, color: Color(0xFF4A72B2), fontWeight: FontWeight.w500)),
-                                  )).toList(),
+                                  icon: const Icon(
+                                    Icons.arrow_drop_down,
+                                    color: Color(0xFF4A72B2),
+                                  ),
+                                  items: viewModel.statiAsset
+                                      .map(
+                                        (s) => DropdownMenuItem(
+                                          value: s,
+                                          child: Text(
+                                            s.description ?? s.code ?? '',
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              color: Color(0xFF4A72B2),
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ),
+                                      )
+                                      .toList(),
                                   onChanged: (val) {
                                     if (val != null) viewModel.selectStatoAsset(val);
                                   },
@@ -188,7 +252,15 @@ class _ActivityListContent extends StatelessWidget {
                 // 4. Activity List
                 Expanded(
                   child: nonInMarcia == '1'
-                      ? const Center(child: Text('ASSET NON IN MARCIA', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)))
+                      ? const Center(
+                          child: Text(
+                            'ASSET NON IN MARCIA',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        )
                       : ListView.builder(
                           padding: const EdgeInsets.only(top: 10, bottom: 80),
                           itemCount: viewModel.activities.length,
@@ -214,7 +286,12 @@ class _ActivityListContent extends StatelessWidget {
                     final missingNoteAct = viewModel.checkMandatoryNotes();
                     if (missingNoteAct != null) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Nota obbligatoria per: ${missingNoteAct.description}'), backgroundColor: Colors.red)
+                        SnackBar(
+                          content: Text(
+                            'Nota obbligatoria per: ${missingNoteAct.description}',
+                          ),
+                          backgroundColor: Colors.red,
+                        ),
                       );
                       return;
                     }
@@ -225,9 +302,14 @@ class _ActivityListContent extends StatelessWidget {
                         context: context,
                         builder: (context) => AlertDialog(
                           title: const Text('Ispezione non completa'),
-                          content: const Text('Impossibile continuare: tutte le attività devono essere completate.'),
+                          content: const Text(
+                            'Impossibile continuare: tutte le attività devono essere completate.',
+                          ),
                           actions: [
-                            TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK')),
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text('OK'),
+                            ),
                           ],
                         ),
                       );
@@ -239,15 +321,23 @@ class _ActivityListContent extends StatelessWidget {
                       context: context,
                       builder: (context) => AlertDialog(
                         title: const Text('Conferma'),
-                        content: const Text('Si vuole considerare l\'ispezione conclusa?'),
+                        content: const Text(
+                          'Si vuole considerare l\'ispezione conclusa?',
+                        ),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.pop(context, false),
-                            child: const Text('NO', style: TextStyle(color: Colors.black54)),
+                            child: const Text(
+                              'NO',
+                              style: TextStyle(color: Colors.black54),
+                            ),
                           ),
                           TextButton(
                             onPressed: () => Navigator.pop(context, true),
-                            child: const Text('SI', style: TextStyle(fontWeight: FontWeight.bold)),
+                            child: const Text(
+                              'SI',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
                           ),
                         ],
                       ),
@@ -261,21 +351,33 @@ class _ActivityListContent extends StatelessWidget {
                         context: context,
                         barrierDismissible: false,
                         builder: (context) => AlertDialog(
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                          title: const Text("Operazione Completata", textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          title: const Text(
+                            "Operazione Completata",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
                           content: const Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.check_circle_rounded, color: Color(0xFF28A745), size: 80),
+                              Icon(
+                                Icons.check_circle_rounded,
+                                color: Color(0xFF28A745),
+                                size: 80,
+                              ),
                               SizedBox(height: 20),
-                              Text('Ispezione conclusa con successo.', 
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(fontSize: 16)),
+                              Text(
+                                'Ispezione conclusa con successo.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(fontSize: 16),
+                              ),
                             ],
                           ),
                         ),
                       );
-                      
+
                       // Wait 2 seconds
                       await Future.delayed(const Duration(seconds: 2));
                       if (context.mounted) Navigator.pop(context); // Close success dialog
@@ -283,16 +385,40 @@ class _ActivityListContent extends StatelessWidget {
 
                     // 4. Navigation to next asset or back
                     if (context.mounted) {
-                      final nextActivity = viewModel.getNextAssetActivity(fullAssetList);
-                      if (nextActivity != null) {
-                        int currentIndex = fullAssetList.indexWhere((asset) => asset['id'] == viewModel.assetId);
-                        final nextAsset = fullAssetList[currentIndex + 1];
-                        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => InspectionActivityListView(
-                          inspection: viewModel.inspection, assetId: nextAsset['id'], assetLabel: nextAsset['label'],
-                          activities: (nextAsset['activities'] as List).cast<InspectionActivity>(), fullAssetList: fullAssetList,
-                        )));
+                      // Aggiorna la percentuale dell'asset corrente nella lista per evitare navigazione obsoleta
+                      final currentIndex = fullAssetList.indexWhere(
+                        (asset) => asset['id'] == viewModel.assetId,
+                      );
+                      if (currentIndex != -1) {
+                        fullAssetList[currentIndex]['percentage'] = viewModel.percentage;
+                      }
+
+                      final nextAsset = viewModel.getNextIncompleteAsset(fullAssetList);
+
+                      if (nextAsset != null) {
+                        // USIAMO push INVECE DI pushReplacement
+                        // Questo mantiene la catena di navigazione corretta
+                        await Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => InspectionActivityListView(
+                              inspection: viewModel.inspection,
+                              assetId: nextAsset['id'],
+                              assetLabel: nextAsset['label'],
+                              activities: (nextAsset['activities'] as List)
+                                  .cast<InspectionActivity>(),
+                              fullAssetList: fullAssetList,
+                            ),
+                          ),
+                        );
+
+                        // IMPORTANTE: Quando l'utente torna indietro dall'asset successivo,
+                        // noi facciamo un pop(true) per tornare alla lista principale e forzare il refresh
+                        if (context.mounted) {
+                          Navigator.of(context).pop(true);
+                        }
                       } else {
-                        Navigator.of(context).pop(true); // Return home/asset list
+                        // Se non ci sono più asset, torniamo alla lista principale passando 'true'
+                        Navigator.of(context).pop(true);
                       }
                     }
                   },
@@ -300,7 +426,14 @@ class _ActivityListContent extends StatelessWidget {
                     height: 56,
                     padding: const EdgeInsets.symmetric(horizontal: 32),
                     alignment: Alignment.center,
-                    child: const Text('CONTINUA', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                    child: const Text(
+                      'CONTINUA',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
                   ),
                 ),
               ),

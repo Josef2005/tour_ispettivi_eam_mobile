@@ -60,7 +60,11 @@ class AssetViewModel extends ChangeNotifier {
   int _calculateAssetPercentage(List<InspectionActivity> acts) {
     if (acts.isEmpty) return 0;
     int completed = acts.where((a) => a.isCompleted).length;
-    return (completed / acts.length * 100).round();
+    int total = acts.length;
+    int percentage = (completed / total * 100).round();
+    
+    
+    return percentage;
   }
 
   AssetViewModel({required this.inspection}) {
@@ -81,12 +85,9 @@ class AssetViewModel extends ChangeNotifier {
         whereArgs: [inspection.idext],
       );
 
-      print('AssetViewModel: Trovate ${maps.length} attività nel DB locale');
 
       if ((maps.isEmpty || forceSync)) {
-        print(
-          'AssetViewModel: Nessuna attività trovata o richiesto sync. Tentativo download dal server...',
-        );
+        print('AssetViewModel: Nessuna attività trovata o richiesto sync. Tentativo download dal server...');
         await _syncService.syncInspectionActivities(inspection.idext);
 
         maps = await _dbHelper.queryItems(
@@ -98,14 +99,9 @@ class AssetViewModel extends ChangeNotifier {
       }
 
       _activities = maps.map((m) => InspectionActivity.fromMap(m)).toList();
-
-      if (_activities.isNotEmpty) {
-        print(
-          'AssetViewModel: Prima attività dettagli: ${_activities.first.details.map((e) => e.name).toList()}',
-        );
-      }
+      
     } catch (e) {
-      print('AssetViewModel: Errore durante il caricamento: $e');
+      print('AssetViewModel ERROR: $e');
       _errorMessage = 'Errore caricamento attività: $e';
     }
 
